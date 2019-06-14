@@ -1,0 +1,261 @@
+--- micropython-old.js	2019-06-14 13:21:46.000000000 -0700
++++ micropython.js	2019-06-13 16:47:18.000000000 -0700
+@@ -26,6 +26,8 @@
+ 
+ var Module = {};
+ 
++var pyResult = "";
++
+ var mainProgram = function()
+ {
+   mp_js_init = Module.cwrap('mp_js_init', 'null', ['number']);
+@@ -35,43 +37,43 @@
+ 
+   MP_JS_EPOCH = (new Date()).getTime();
+ 
+-  if (typeof window === 'undefined' && require.main === module) {
+-      var fs = require('fs');
+-      var stack_size = 64 * 1024;
+-      var contents = '';
+-      var repl = true;
+-
+-      for (var i = 0; i < process.argv.length; i++) {
+-          if (process.argv[i] === '-X' && i < process.argv.length - 1) {
+-              if (process.argv[i + 1].includes('stack=')) {
+-                  stack_size = parseInt(process.argv[i + 1].split('stack=')[1]);
+-                  if (process.argv[i + 1].substr(-1).toLowerCase() === 'k') {
+-                      stack_size *= 1024;
+-                  } else if (process.argv[i + 1].substr(-1).toLowerCase() === 'm') {
+-                      stack_size *= 1024 * 1024;
+-                  }
+-              }
+-          } else if (process.argv[i].includes('.py')) {
+-              contents += fs.readFileSync(process.argv[i], 'utf8');
+-              repl = false;;
+-          }
+-      }
+-      mp_js_init(stack_size);
+-
+-      if (repl) {
+-          mp_js_init_repl();
+-          process.stdin.setRawMode(true);
+-          process.stdin.on('data', function (data) {
+-              for (var i = 0; i < data.length; i++) {
+-                  if (mp_js_process_char(data[i])) {
+-                      process.exit()
+-                  }
+-              }
+-          });
+-      } else {
+-          process.exitCode = mp_js_do_str(contents);
+-      }
+-  }
++  // if (typeof window === 'undefined' && require.main === module) {
++  //     var fs = require('fs');
++  //     var stack_size = 64 * 1024;
++  //     var contents = '';
++  //     var repl = true;
++
++  //     for (var i = 0; i < process.argv.length; i++) {
++  //         if (process.argv[i] === '-X' && i < process.argv.length - 1) {
++  //             if (process.argv[i + 1].includes('stack=')) {
++  //                 stack_size = parseInt(process.argv[i + 1].split('stack=')[1]);
++  //                 if (process.argv[i + 1].substr(-1).toLowerCase() === 'k') {
++  //                     stack_size *= 1024;
++  //                 } else if (process.argv[i + 1].substr(-1).toLowerCase() === 'm') {
++  //                     stack_size *= 1024 * 1024;
++  //                 }
++  //             }
++  //         } else if (process.argv[i].includes('.py')) {
++  //             contents += fs.readFileSync(process.argv[i], 'utf8');
++  //             repl = false;;
++  //         }
++  //     }
++  //     mp_js_init(stack_size);
++
++  //     if (repl) {
++  //         mp_js_init_repl();
++  //         process.stdin.setRawMode(true);
++  //         process.stdin.on('data', function (data) {
++  //             for (var i = 0; i < data.length; i++) {
++  //                 if (mp_js_process_char(data[i])) {
++  //                     process.exit()
++  //                 }
++  //             }
++  //         });
++  //     } else {
++  //         process.exitCode = mp_js_do_str(contents);
++  //     }
++  // }
+ }
+ 
+ Module["onRuntimeInitialized"] = mainProgram;
+@@ -130,7 +132,8 @@
+ var ENVIRONMENT_IS_SHELL = false;
+ ENVIRONMENT_IS_WEB = typeof window === 'object';
+ ENVIRONMENT_IS_WORKER = typeof importScripts === 'function';
+-ENVIRONMENT_HAS_NODE = typeof process === 'object' && typeof require === 'function';
++// ENVIRONMENT_HAS_NODE = typeof process === 'object' && typeof require === 'function';
++ENVIRONMENT_HAS_NODE =false;
+ ENVIRONMENT_IS_NODE = ENVIRONMENT_HAS_NODE && !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_WORKER;
+ ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
+ 
+@@ -1685,10 +1688,14 @@
+   });
+ }
+ 
++var wasmCreated = false;
++
+ // Create the wasm instance.
+ // Receives the wasm imports, returns the exports.
+ function createWasm(env) {
+ 
++  var exp = {};
++
+   // prepare imports
+   var info = {
+     'env': env
+@@ -1704,7 +1711,11 @@
+   // handle a generated wasm instance, receiving its exports and
+   // performing other necessary setup
+   function receiveInstance(instance, module) {
++    console.log(instance);
++    console.log(module);
+     var exports = instance.exports;
++    exp = exports;
++    console.log(exports["_mp_js_init"]);
+     Module['asm'] = exports;
+     removeRunDependency('wasm-instantiate');
+   }
+@@ -1714,42 +1725,48 @@
+   // (for example, if the order of elements is wrong, and the one defining Module is
+   // later), so we save Module and check it later.
+   var trueModule = Module;
+-  function receiveInstantiatedSource(output) {
++  function receiveInstantiatedSource(i, m) {
+     // 'output' is a WebAssemblyInstantiatedSource object which has both the module and instance.
+     // receiveInstance() will swap in the exports (to Module.asm) so they can be called
+     assert(Module === trueModule, 'the Module object should not be replaced during async compilation - perhaps the order of HTML elements is wrong?');
+     trueModule = null;
+       // TODO: Due to Closure regression https://github.com/google/closure-compiler/issues/3193, the above line no longer optimizes out down to the following line.
+       // When the regression is fixed, can restore the above USE_PTHREADS-enabled path.
+-    receiveInstance(output['instance']);
++    receiveInstance(i , m);
+   }
+ 
+   function instantiateArrayBuffer(receiver) {
+-    return getBinaryPromise().then(function(binary) {
+-      return WebAssembly.instantiate(binary, info);
+-    }).then(receiver, function(reason) {
+-      err('failed to asynchronously prepare wasm: ' + reason);
+-      abort(reason);
+-    });
++    const importObject = { env };
++    const bytes = new Uint8Array(part0.concat(part1));
++    var myModule = new WebAssembly.Module(bytes);
++    var myInstance = new WebAssembly.Instance(myModule, info);
++    wasmCreated = true;
++    return receiver(myInstance, myModule);
++    // return getBinaryPromise().then(function(binary) {
++    //   return WebAssembly.instantiate(binary, info);
++    // }).then(receiver, function(reason) {
++    //   err('failed to asynchronously prepare wasm: ' + reason);
++    //   abort(reason);
++    // });
+   }
+ 
+   // Prefer streaming instantiation if available.
+   function instantiateAsync() {
+-    if (!Module['wasmBinary'] &&
+-        typeof WebAssembly.instantiateStreaming === 'function' &&
+-        !isDataURI(wasmBinaryFile) &&
+-        typeof fetch === 'function') {
+-      return WebAssembly.instantiateStreaming(fetch(wasmBinaryFile, { credentials: 'same-origin' }), info)
+-        .then(receiveInstantiatedSource, function(reason) {
+-          // We expect the most common failure cause to be a bad MIME type for the binary,
+-          // in which case falling back to ArrayBuffer instantiation should work.
+-          err('wasm streaming compile failed: ' + reason);
+-          err('falling back to ArrayBuffer instantiation');
+-          instantiateArrayBuffer(receiveInstantiatedSource);
+-        });
+-    } else {
++    // if (!Module['wasmBinary'] &&
++    //     typeof WebAssembly.instantiateStreaming === 'function' &&
++    //     !isDataURI(wasmBinaryFile) &&
++    //     typeof fetch === 'function') {
++    //   return WebAssembly.instantiateStreaming(fetch(wasmBinaryFile, { credentials: 'same-origin' }), info)
++    //     .then(receiveInstantiatedSource, function(reason) {
++    //       // We expect the most common failure cause to be a bad MIME type for the binary,
++    //       // in which case falling back to ArrayBuffer instantiation should work.
++    //       err('wasm streaming compile failed: ' + reason);
++    //       err('falling back to ArrayBuffer instantiation');
++    //       instantiateArrayBuffer(receiveInstantiatedSource);
++    //     });
++    // } else {
+       return instantiateArrayBuffer(receiveInstantiatedSource);
+-    }
++    // }
+   }
+   // User shell pages can write their own Module.instantiateWasm = function(imports, successCallback) callback
+   // to manually instantiate the Wasm module themselves. This allows pages to run the instantiation parallel
+@@ -1764,7 +1781,7 @@
+   }
+ 
+   instantiateAsync();
+-  return {}; // no exports yet; we'll fill them in later
++  return exp; // no exports yet; we'll fill them in later
+ }
+ 
+ // Provide an "asm.js function" for the application, called to "link" the asm.js module. We instantiate
+@@ -2068,18 +2085,24 @@
+       }
+ 
+   function _mp_js_write(ptr, len) {
++      //pyResult = "";
+           for (var i = 0; i < len; ++i) {
+-              if (typeof window === 'undefined') {
+-                  var b = Buffer.alloc(1);
+-                  b.writeInt8(getValue(ptr + i, 'i8'));
+-                  process.stdout.write(b);
+-              } else {
++              // if (typeof window === 'undefined') {
++              //     var b = Buffer.alloc(1);
++              //     b.writeInt8(getValue(ptr + i, 'i8'));
++              //     pyResult += b;
++              //     console.log(b);
++              //     process.stdout.write(b);
++              // } else {
+                   var c = String.fromCharCode(getValue(ptr + i, 'i8'));
+-                  var mp_js_stdout = document.getElementById('mp_js_stdout');
+-                  var print = new Event('print');
+-                  print.data = c;
+-                  mp_js_stdout.dispatchEvent(print);
+-              }
++                  // var mp_js_stdout = document.getElementById('mp_js_stdout');
++                  // var print = new Event('print');
++                  // print.data = c;
++                  pyResult += c;
++                  console.log(c);
++                  console.log(pyResult);
++                  // mp_js_stdout.dispatchEvent(print);
++              // }
+           }
+       }
+ 
+@@ -2102,6 +2125,7 @@
+ 
+ var ASSERTIONS = true;
+ 
++
+ // Copyright 2017 The Emscripten Authors.  All rights reserved.
+ // Emscripten is available under two separate licenses, the MIT license and the
+ // University of Illinois/NCSA Open Source License.  Both these licenses can be
+@@ -2394,6 +2418,8 @@
+ };
+ 
+ var real__mp_js_init = asm["_mp_js_init"];
++console.log(asm["_mp_js_init"]);
++
+ asm["_mp_js_init"] = function() {
+   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
