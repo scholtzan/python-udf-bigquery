@@ -1,6 +1,6 @@
 .PHONY: build clean
 
-MICROPYTHON-REPO=git@github.com:micropython/micropython.git
+MICROPYTHON-REPO=https://github.com/micropython/micropython.git
 MICROPYTHON-COMMIT=14cf91f70467aa928f3e17223f108ace0864b4fe
 
 build:
