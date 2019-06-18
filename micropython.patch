@@ -1,15 +1,21 @@
 --- micropython-old.js	2019-06-14 13:21:46.000000000 -0700
-+++ micropython.js	2019-06-13 16:47:18.000000000 -0700
-@@ -26,6 +26,8 @@
++++ micropython.js	2019-06-18 11:48:27.000000000 -0700
+@@ -26,6 +26,14 @@
  
  var Module = {};
  
 +var pyResult = "";
 +
++// hack
++var mp_js_exec_str = function(python_code) {
++  mp_js_do_str(python_code);
++  return pyResult;
++}
++
  var mainProgram = function()
  {
    mp_js_init = Module.cwrap('mp_js_init', 'null', ['number']);
-@@ -35,43 +37,43 @@
+@@ -35,43 +43,43 @@
  
    MP_JS_EPOCH = (new Date()).getTime();
  
@@ -90,7 +96,7 @@
  }
  
  Module["onRuntimeInitialized"] = mainProgram;
-@@ -130,7 +132,8 @@
+@@ -130,7 +138,8 @@
  var ENVIRONMENT_IS_SHELL = false;
  ENVIRONMENT_IS_WEB = typeof window === 'object';
  ENVIRONMENT_IS_WORKER = typeof importScripts === 'function';
@@ -100,7 +106,7 @@
  ENVIRONMENT_IS_NODE = ENVIRONMENT_HAS_NODE && !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_WORKER;
  ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
  
-@@ -1685,10 +1688,14 @@
+@@ -1685,10 +1694,14 @@
    });
  }
  
@@ -115,7 +121,7 @@
    // prepare imports
    var info = {
      'env': env
-@@ -1704,7 +1711,11 @@
+@@ -1704,7 +1717,11 @@
    // handle a generated wasm instance, receiving its exports and
    // performing other necessary setup
    function receiveInstance(instance, module) {
@@ -127,7 +133,7 @@
      Module['asm'] = exports;
      removeRunDependency('wasm-instantiate');
    }
-@@ -1714,42 +1725,48 @@
+@@ -1714,42 +1731,48 @@
    // (for example, if the order of elements is wrong, and the one defining Module is
    // later), so we save Module and check it later.
    var trueModule = Module;
@@ -198,7 +204,7 @@
    }
    // User shell pages can write their own Module.instantiateWasm = function(imports, successCallback) callback
    // to manually instantiate the Wasm module themselves. This allows pages to run the instantiation parallel
-@@ -1764,7 +1781,7 @@
+@@ -1764,7 +1787,7 @@
    }
  
    instantiateAsync();
@@ -207,7 +213,7 @@
  }
  
  // Provide an "asm.js function" for the application, called to "link" the asm.js module. We instantiate
-@@ -2068,18 +2085,24 @@
+@@ -2068,18 +2091,22 @@
        }
  
    function _mp_js_write(ptr, len) {
@@ -235,14 +241,12 @@
 +                  // var print = new Event('print');
 +                  // print.data = c;
 +                  pyResult += c;
-+                  console.log(c);
-+                  console.log(pyResult);
 +                  // mp_js_stdout.dispatchEvent(print);
 +              // }
            }
        }
  
-@@ -2102,6 +2125,7 @@
+@@ -2102,6 +2129,7 @@
  
  var ASSERTIONS = true;
  
@@ -250,7 +254,7 @@
  // Copyright 2017 The Emscripten Authors.  All rights reserved.
  // Emscripten is available under two separate licenses, the MIT license and the
  // University of Illinois/NCSA Open Source License.  Both these licenses can be
-@@ -2394,6 +2418,8 @@
+@@ -2394,6 +2422,8 @@
  };
  
  var real__mp_js_init = asm["_mp_js_init"];

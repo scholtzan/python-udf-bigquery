@@ -77,7 +77,7 @@ RETURNS STRING
 LANGUAGE js AS \"\"\"
     mp_js_init(64 * 1024);
     const pythonCode = `{}`;
-    return mp_js_do_str(pythonCode);
+    return mp_js_exec_str(pythonCode);
 \"\"\"
 OPTIONS (
 {});
