@@ -13,6 +13,8 @@ build:
 	cp micropython/ports/javascript/build/micropython.js build/
 	cp micropython/ports/javascript/build/firmware.wasm build/
 	patch -u build/micropython.js -i micropython.patch
+	pip3 install gcloud
+	python3 build.py
 
 clean:
 	rm -rf micropython
