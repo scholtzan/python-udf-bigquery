@@ -28,6 +28,22 @@ var Module = {};
 
 var pyResult = "";
 
+// hack
+var mp_js_exec_str = function(pythonCode) {
+  // last statement as return value
+
+  var pythonLines = pythonCode.split("\n");
+  var lastLine = pythonLines.pop();
+  var code = pythonLines.join("\n");
+  lastLine = lastLine.replace("return ", "print(");
+  code += "\n" + lastLine + ")";
+
+  // code = "print(1)";
+
+  mp_js_do_str(code);
+  return pyResult;
+}
+
 var mainProgram = function()
 {
   mp_js_init = Module.cwrap('mp_js_init', 'null', ['number']);
@@ -2099,8 +2115,6 @@ function copyTempDouble(ptr) {
                   // var print = new Event('print');
                   // print.data = c;
                   pyResult += c;
-                  console.log(c);
-                  console.log(pyResult);
                   // mp_js_stdout.dispatchEvent(print);
               // }
           }

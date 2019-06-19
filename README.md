@@ -1,6 +1,14 @@
 # User-Defined Functions with Python in BigQuery
 
+BigQuery supports user-defined functions written in JavaScript. Some prior art showcased that WebAssembly is supported in the JavaScript ecosystem running on BigQuery. 
+
+
 * background, limitations of BigQuery, idea, helper scripts, prrof-of-concept
+
+
+## Limitations
+
+
 
 
 ## Usage
@@ -30,6 +38,9 @@ optional arguments:
                         Path to file whose code should be used in the
                         generated UDF.
 ```
+
+
+todo: usage in BigQuery
 
 
 ## Build from Scratch 
