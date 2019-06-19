@@ -2,20 +2,6 @@
 
 BigQuery supports user-defined functions written in JavaScript. Some prior art showcased that WebAssembly is supported in the JavaScript ecosystem running on BigQuery. This project demonstrates how WebAssembly can be used to bring Python into BigQuery. Since BigQuery has a lot of limitations, [MicroPython](https://github.com/micropython/micropython) with some modification is used.
 
-## Limitations
-
-BigQuery has the following limitations related to the use of user-defined functions:
-* maximum inline code blob size of 32 KB
-* external code files can have a size of up to 1 MB
-* total size of external resources is max. 5 MB
-* UDFs timeout after 60s
-* ca. 40 MB of memory available for JavaScript processing environment
-* the JavaScript environment does not support `async` in Standard SQL and does not support certain other functions for loading external resources, such as `require` or `fetch`
-
-These limitations make it impossible to use fully-fledged Python including the Python Standard Library which, for example, [Pyodide](https://github.com/iodide-project/pyodide) offers. MicroPython is optimized to run on embedded systems and can run on BigQuery with some modifications. Using MicroPython in BigQuery has some limitations as well:
-* no Python Standard Library
-* currently no support for importing other packages
-
 ## Usage
 
 The `udf.py` script automatically generates a skeleton UDF function using MicroPython. Optionally, it allows to provide a Google Storage location where supporting files can automatically get uploaded. For this it is necessary to have write permissions in the bucket and to export `GOOGLE_APPLICATION_CREDENTIALS`.
@@ -77,6 +63,21 @@ The external file `MicroPython.js` exposes available Javascript functions, such 
 The query can be copied into the BigQuery Web console and executed there:
 
 ![BigQuery web console](screenshot.png)
+
+
+## Limitations
+
+BigQuery has the following limitations related to the use of user-defined functions:
+* maximum inline code blob size of 32 KB
+* external code files can have a size of up to 1 MB
+* total size of external resources is max. 5 MB
+* UDFs timeout after 60s
+* ca. 40 MB of memory available for JavaScript processing environment
+* the JavaScript environment does not support `async` in Standard SQL and does not support certain other functions for loading external resources, such as `require` or `fetch`
+
+These limitations make it impossible to use fully-fledged Python including the Python Standard Library which, for example, [Pyodide](https://github.com/iodide-project/pyodide) offers. MicroPython is optimized to run on embedded systems and can run on BigQuery with some modifications. Using MicroPython in BigQuery has some limitations as well:
+* no Python Standard Library
+* currently no support for importing other packages
 
 
 ## Build from Scratch 
