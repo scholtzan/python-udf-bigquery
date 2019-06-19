@@ -74,6 +74,11 @@ First, MicroPython must be initialized with a given stack size in bytes using `m
 
 The external file `MicroPython.js` exposes available Javascript functions, such as `mp_js_init` and `mp_js_exec_str`, the files `part0.js` and `part1.js` contain the bytes of the MicroPython WebAssembly which get concatenated and used to initialize MicroPython in BigQuery. The MicroPython WebAssembly needs to be split over several files since BigQuery only allows external files to have a maximum file size of 1 MB.
 
+The query can be copied into the BigQuery Web console and executed there:
+
+![BigQuery web console](screenshot.png)
+
+
 ## Build from Scratch 
 
 To generate all the JavaScript files for using MicroPython in BigQuery, [Python 3](https://www.python.org/downloads/) and [emscripten](https://emscripten.org/docs/getting_started/downloads.html) needs to be installed. Run `make` to start the build process.
