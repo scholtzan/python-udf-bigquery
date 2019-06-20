@@ -6,6 +6,16 @@ BigQuery supports user-defined functions written in JavaScript. Some prior art s
 
 The `udf.py` script automatically generates a skeleton UDF function using MicroPython. Optionally, it allows to provide a Google Storage location where supporting files can automatically get uploaded. For this it is necessary to have write permissions in the bucket and to export `GOOGLE_APPLICATION_CREDENTIALS`.
 
+The Python library `gcloud` for Google Cloud Platform needs to be installed, eg. in a virtual environment:
+
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install gcloud
+``` 
+
+Script usage:
+
 ```
 $ python3 udf.py --help                                                                                                                                                                                                 
 usage: udf.py [-h] [--input INPUT [INPUT ...]] [--gcs-bucket GCS_BUCKET]

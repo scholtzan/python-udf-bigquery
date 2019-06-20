@@ -18,7 +18,7 @@ parser = ArgumentParser(description=__doc__)
 parser.add_argument(
     "--input",
     default="build/part0.js build/part1.js build/micropython.js",
-    nargs='+',
+    nargs="+",
     help="The JavaScript files to be used in BigQuery UDF.",
 )
 parser.add_argument(
@@ -61,14 +61,15 @@ def generate_udf(gcs_bucket, gcs_path, python_file, files):
     python = ""
 
     if python_file != "*":
-        with open(python_file, 'r') as file:
+        with open(python_file, "r") as file:
             python = file.read()
 
-    external_files = ""
-
-    for file in files:
-        filename = os.path.basename(file)
-        external_files += "library = gs://{}/{}{},\n".format(gcs_bucket, gcs_path, filename)
+    external_files = ",\n".join(list(map(
+        lambda f: 'library = "gs://{}/{}{}"'.format(
+            gcs_bucket, gcs_path, os.path.basename(f)
+        ),
+        files,
+    )))
 
     return """
 CREATE TEMP FUNCTION
@@ -87,7 +88,9 @@ FROM (
 SELECT
 1 x,
 2 y)
-    """.format(python, external_files)
+    """.format(
+        python, external_files
+    )
 
 
 def main():
@@ -98,7 +101,9 @@ def main():
         push_files_to_gcs(args.gcs_bucket, args.gcs_path, args.input)
         gcs_bucket = args.gcs_bucket
 
-    print(generate_udf(gcs_bucket, args.gcs_path, args.python_file, args.input.split(" ")))
+    print(
+        generate_udf(gcs_bucket, args.gcs_path, args.python_file, args.input.split(" "))
+    )
 
 
 if __name__ == "__main__":
