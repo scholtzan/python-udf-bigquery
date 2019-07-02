@@ -56,7 +56,7 @@ LANGUAGE js AS """
 OPTIONS (
     library = "gs://bucket/path/part0.js",
     library = "gs://bucket/path/part1.js",
-    library = "gs://bucket/path/MicroPython.js"
+    library = "gs://bucket/path/micropython.js"
 );
 SELECT
   pyFunc(x)
@@ -68,7 +68,7 @@ FROM (
 
 First, MicroPython must be initialized with a given stack size in bytes using `mp_js_init()`. Then Python code can get passed into `mp_js_exec_str()` as a string and the value of the last `return` statement will be returned as result.
 
-The external file `MicroPython.js` exposes available Javascript functions, such as `mp_js_init` and `mp_js_exec_str`, the files `part0.js` and `part1.js` contain the bytes of the MicroPython WebAssembly which get concatenated and used to initialize MicroPython in BigQuery. The MicroPython WebAssembly needs to be split over several files since BigQuery only allows external files to have a maximum file size of 1 MB.
+The external file `micropython.js` exposes available Javascript functions, such as `mp_js_init` and `mp_js_exec_str`, the files `part0.js` and `part1.js` contain the bytes of the MicroPython WebAssembly which get concatenated and used to initialize MicroPython in BigQuery. The MicroPython WebAssembly needs to be split over several files since BigQuery only allows external files to have a maximum file size of 1 MB.
 
 The query can be copied into the BigQuery Web console and executed there:
 
@@ -94,6 +94,6 @@ These limitations make it impossible to use fully-fledged Python including the P
 
 To generate all the JavaScript files for using MicroPython in BigQuery, [Python 3](https://www.python.org/downloads/) and [emscripten](https://emscripten.org/docs/getting_started/downloads.html) needs to be installed. Run `make` to start the build process.
 
-To use a newer version of MicroPython, update the commit hash in `Makefile`. This will most likely break applying the changes in `MicroPython.patch`, so these changes need to be adjusted for newer versions.
+To use a newer version of MicroPython, update the commit hash in `Makefile`. This will most likely break applying the changes in `micropython.patch`, so these changes need to be adjusted for newer versions.
 
 Generated files will be written to `build/`
