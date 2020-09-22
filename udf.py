@@ -98,7 +98,7 @@ def main():
     gcs_bucket = "bucket-name"
 
     if args.gcs_bucket != "":
-        push_files_to_gcs(args.gcs_bucket, args.gcs_path, args.input)
+        push_files_to_gcs(args.gcs_bucket, args.gcs_path, args.input.split(" "))
         gcs_bucket = args.gcs_bucket
 
     print(
